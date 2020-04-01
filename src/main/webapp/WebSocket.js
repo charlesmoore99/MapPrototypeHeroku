@@ -1,15 +1,15 @@
 
-    var Channel = function(callback){
+    var Channel = function(uri, callback){
     	var self = this;
     	
+		self.uri = uri;
     	self.socket = null;
     	
         self.connect = function(uri) {
-
             if ('WebSocket' in window) {
-                self.socket = new WebSocket(uri);
+                self.socket = new WebSocket(self.uri);
             } else if ('MozWebSocket' in window) {
-                self.socket = new MozWebSocket(uri);
+                self.socket = new MozWebSocket(self.uri);
             } else {
             	alertify.notify('WebSocket connection opened.','', 3);
                 return;

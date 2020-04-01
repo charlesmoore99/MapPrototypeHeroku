@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <%
-	String ws = "8080";
-	String wss = "8080";
+	//String ws = ":8080";
+	//String wss = ":8080";
+	String ws = "";
+	String wss = "";
 %>
 <html>
 <head>
@@ -123,12 +125,12 @@ h1 {
 		var viewId = 1;
 	   	var uri = ""
 		if (window.location.protocol == 'http:') {
-		    uri = 'ws://' + window.location.hostname + ':<%=ws%>/MapTest/websocket/' + viewId;
+		    uri = 'ws://' + window.location.hostname + '<%=ws%>/websocket/' + viewId;
 		} else {
-		    uri = 'wss://' + window.location.hostname + ':<%=wss%>/MapTest/websocket/' + viewId;
+		    uri = 'wss://' + window.location.hostname + '<%=wss%>/websocket/' + viewId;
 		}
 
-	   	var websocket = new Channel(function(s) {
+	   	var websocket = new Channel(uri, function(s) {
 			console.log("Received: " + s.id);
 
 			// add new new player to player list
