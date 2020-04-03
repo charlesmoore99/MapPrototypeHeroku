@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <%
-	//String ws = ":8080";
-	//String wss = ":8080";
+//String ws = ":8080";
+//String wss = ":8080";
 	String ws = "";
 	String wss = "";
 %>
@@ -123,12 +123,7 @@ h1 {
 		mapContainer.createMap();
 
 		var viewId = 1;
-	   	var uri = ""
-		if (window.location.protocol == 'http:') {
-		    uri = 'ws://' + window.location.hostname + '<%=ws%>/websocket/' + viewId;
-		} else {
-		    uri = 'wss://' + window.location.hostname + '<%=wss%>/websocket/' + viewId;
-		}
+	   	var uri = buildWebsocketURI(1);
 
 	   	var websocket = new Channel(uri, function(s) {
 			console.log("Received: " + s.id);
@@ -195,7 +190,7 @@ h1 {
 		});
 
 	   	
-		websocket.connect(uri);
+		websocket.connect();
 		startClock();
  	});
 
