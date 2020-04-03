@@ -1,18 +1,12 @@
 	
 function buildWebsocketURI (channelNumber){
 	var protocol = window.location.protocol;
-	if (protocol === "https") {
+	if (protocol === "https:") {
 		protocol = "wss://";
 	} else {
 		protocol = "ws://";			
 	}
 	var host = window.location.host;
-//	var port = window.location.port;
-//	if (port == 80 | port == 443 | port ==="") {
-//		port = "";
-//	} else {
-//		port = ":" + port;
-//	}
 	var path = window.location.pathname;
 	if (path.includes("/")) {
 		path = path.substr(0, path.lastIndexOf("/"));
