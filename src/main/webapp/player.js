@@ -34,7 +34,7 @@ var Player = function(o) {
 	};
 
 	self.hasPredictedLocation = function() {
-		return speed && bearing;
+		return self.speed && self.bearing;
 	};
 	
 	self.estimatedLocation = function(){
