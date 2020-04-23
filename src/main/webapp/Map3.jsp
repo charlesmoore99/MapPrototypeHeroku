@@ -1,10 +1,4 @@
 <!DOCTYPE html>
-<%
-//String ws = ":8080";
-//String wss = ":8080";
-	String ws = "";
-	String wss = "";
-%>
 <html>
 <head>
 
@@ -41,6 +35,29 @@ body {
 h1 {
  font-family: Arial, Charcoal, sans-serif;
 }
+
+
+div.slider {
+	display: flex; 
+	align-items: center;
+	flex-flow: column; 
+	height:100%;
+}
+
+div.slider.active {
+	background: burlywood;
+}
+
+
+div.slider.paused {
+	background: red;
+}
+
+div.selected {
+	background: lightblue;
+}
+
+
 </style>
 </head>
 <body>
@@ -48,70 +65,115 @@ h1 {
 	<script type='text/javascript' src='jquery-ui-1.12.1/jquery-ui.js'></script>
 	<script type="text/javascript" src="jquery-layout/jquery.layout-1.4.4.js"></script>
 	
-	<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
-		integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
-		crossorigin=""></script>
+	<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
+
 	<!--  https://github.com/Leaflet/Leaflet.markercluster-->
 	<script type='text/javascript' src="leaflet.markercluster.js"></script>
 
-	
 	<script type='text/javascript' src='alertify.min.js'></script>
 	<script type='text/javascript' src='moment.js'></script>
 	<script type='text/javascript' src='qtip.js'></script>
-
 	
 	<script type='text/javascript' src='WebSocket.js'></script>
+	
+	<script type='text/javascript' src='dms.js'></script>
+	<script type='text/javascript' src='latLonSpherical.js'></script>
 
 	<script type="text/javascript" src="map.js"></script>
 	<script type="text/javascript" src="slider.js"></script>
 	<script type="text/javascript" src="milsymbol.js"></script>
 	<script type="text/javascript" src="player.js"></script>
+	<script type="text/javascript" src="sidc.js"></script>
 
 	<DIV class="ui-layout-center">
 		<div style="display: flex; flex-flow: row; height:100%">
 			<div id="mapid" style="flex: 1 1 auto;"></div>
-				<div style="display: flex; flex-flow: column; height:100%; background: lightgrey;">
-					<div id="now" style="flex: 0 1 1.5em;">NOW</div>
+				<div class="slider active" style="">
+					<div>Reports</div>
+					<div>
+						<select id="duration">
+							<option value="300" selected>5 Min</option>
+							<option value="600">10 Min</option>
+							<option value="1800">30 Min</option>
+							<option value="3600">1 Hour</option>
+							<option value="14400">4 Hour</option>
+							<option value="86400">1 Day</option>
+						</select>
+					</div>			
+ 					<div id="now" style="flex: 0 1 1.5em;">NOW</div>
 					<div id="slider" style="flex: 1 1 auto;position:relative; width:3em;"></div>
 					<div id ="then" style="flex: 0 1 1.5em;">THEN</div>
+					<div id="controls" style="float:right;" >
+						<button type="button" id="pausePlay">Pause</button>
+					</div>
 				</div>
 			</div>
 	 	</div> 
 	</DIV>
 	<DIV class="ui-layout-north">
-	Header Goes Here
+	PROTOTYPE
 	</DIV>
 	<DIV class="ui-layout-south">
-		<div id="controls">
-			<button type="button" id="startClock">Start Clock</button>
-			<button type="button" id="endClock">End Clock</button>&nbsp;&nbsp;&nbsp;&nbsp;
-			<select id="duration">
-				<option value="300" selected>5 Min</option>
-				<option value="600">10 Min</option>
-				<option value="1800">30 Min</option>
-				<option value="3600">1 Hour</option>
-				<option value="14400">4 Hour</option>
-				<option value="86400">1 Day</option>
-			</select>			
-		</div>
 	</DIV>
 	<DIV class="ui-layout-east">
 		<h1>Reports</h1><hr>
-		<div id="reports"></div>
+		<form id="reports"></form>
 	</DIV>
-	<DIV class="ui-layout-west">
-		<h1>Sensors</h1><hr>
-		<div id="sensors"></div>
-	</DIV>
+<!-- 	<DIV class="ui-layout-west"> -->
+<!-- 		<h1>Sensors</h1><hr> -->
+<!-- 		<div id="sensors"></div> -->
+<!-- 	</DIV> -->
 
 	<script>
 	var sensorList = new PlayerList();
 	var reportList = new PlayerList();
+	var selectedList = new PlayerList();
+	var mapContainer
 	
+	
+
+	
+	
+	function popupReport(playerNumber){
+		var player = reportList.getPlayer(playerNumber);
+		alertify.alert('USMTF Report', "<pre>" + player.text + "</pre>").set('resizable', true).resizeTo('800px','600px'); ;
+	};
+
+	function centerOnPlayer(playerNumber){
+		var player = reportList.getPlayer(playerNumber);
+		mapContainer.centerOn(player.getLatLon());
+	};
+
+	function centerOnPlayers(playerNumber){
+		var player = reportList.getPlayer(playerNumber);
+		mapContainer.centerOn(player.getLatLon());
+	};
+
+	function highlightPlayer(playerNumber) {
+	};
+	
+	function selectPlayer(playerNumber){
+		// deselect the old player(s)
+		selectedList.clear();
+
+		// select the new player(s)
+		$.each($('#reports :checkbox'), function() {
+	        console.log("name " + this.name + " " + this.checked);
+	        if (this.checked) {
+	    		var player = reportList.getPlayer(this.name);
+				selectedList.addPlayer(player);	        		        	
+	        }
+		});		
+		mapContainer.drawSelected(selectedList);
+	};
+
 	
 	var myLayout; // a var is required because this page utilizes: myLayout.allowOverflow() method
 	$(document).ready(function () {
 		myLayout = $('body').layout({
+	        east: {
+	        	size: 350
+	        },
 			// enable showOverflow on west-pane so popups will overlap north pane
 			west__showOverflowOnHover: true
 
@@ -119,9 +181,10 @@ h1 {
 		});
 		
 		
-		var mapContainer = new map({id : 'mapid'});
+		mapContainer = new map({id : 'mapid'});
 		mapContainer.createMap();
-
+		
+		var viewId = 1;
 		var viewId = 1;
 	   	var uri = buildWebsocketURI(1);
 
@@ -137,19 +200,13 @@ h1 {
 
 			mapContainer.drawSensors(sensorList, false);
 			mapContainer.drawReports(reportList, false);	
+			mapContainer.drawSelected(selectedList, false);	
 			
-			
-			// run through the player list and update their locations
-	   		$('#sensors').empty();
-			$.each(sensorList.getPlayers(), function(name, value){
-			    $('#sensors').append(value.type + ": " + value.name + "<br>");
-			});
-			
-			
-	   		$('#reports').empty();
-			$.each(reportList.getPlayers(), function(name, value){
-			    $('#reports').append(value.type + ": " + value.name + "<br>");
-			});
+			var reportEntry = "<div><span>";
+ 			reportEntry += "<input type='checkbox' name='"+ s.id +"' onclick='selectPlayer("+ s.id +")'></input>";
+			reportEntry += "<a onclick='popupReport("+ s.id +")'>" + s.type + ": " + s.name + "</a>";
+			reportEntry += "</span></div>";
+		    $('#reports').prepend(reportEntry);
 
 			var duration = $("#duration").val();
 			redrawSlider(reportList, duration, moment());				
@@ -157,6 +214,7 @@ h1 {
 
 		
 		var theTimer;
+
 		function startClock() {
 			const refreshRate =  (1000);
 			if (typeof theTimer ==='undefined' || theTimer === null) {	
@@ -176,8 +234,20 @@ h1 {
 		};
 		
 		
-		$('#startClock').click(function (obj){
-			startClock();
+		var playing = true;
+		$('#pausePlay').click(function (obj){
+			var sl = $('#pausePlay').closest("div.slider");
+			if (playing === true) {
+				playing = false;
+				$('#pausePlay').html('Resume');
+				$(sl).addClass('paused');
+				endClock();
+			} else {
+				playing = true;
+				$('#pausePlay').html('Pause');
+				$(sl).removeClass('paused');
+				startClock();
+			}
 		});
 		
 		$('#endClock').click(function (obj){

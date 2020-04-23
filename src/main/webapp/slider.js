@@ -1,22 +1,23 @@
 "use strict";
 function collision($div1, $div2) {
-    var x1 = $div1.offset().left;
-    var y1 = $div1.offset().top;
-    var h1 = $div1.outerHeight(true);
-    var w1 = $div1.outerWidth(true);
-    var b1 = y1 + h1;
-    var r1 = x1 + w1;
-    var x2 = $div2.offset().left;
-    var y2 = $div2.offset().top;
-    var h2 = $div2.outerHeight(true);
-    var w2 = $div2.outerWidth(true);
-    var b2 = y2 + h2;
-    var r2 = x2 + w2;
+    var div1Top = $div1.offset().top;
+    var div1Bottom = div1Top + $div1.outerHeight(true);
 
-    if (b1 < y2 || y1 > b2 || r1 < x2 || x1 > r2) return false;
-    return true;
+    var div2Top = $div2.offset().top;
+    var div2Bottom = div2Top + $div2.outerHeight(true);
+
+    if (div1Top < div2Top && div1Bottom < div2Top) {
+    	return false;
+    } else if (div1Top > div2Bottom && div1Top > div2Top) {
+        return false;
+    } else {
+    	return true;
+    }
 }
 
+function mesagePopup(playerNumber) {
+	alertify.alert('Alert Title', 'Alert Message!', function(){ alertify.success('Ok'); });
+}
 
 function redrawSlider(players, duration, now) {
 	var then = now.clone().subtract(duration, "s");
@@ -50,7 +51,7 @@ function redrawSlider(players, duration, now) {
 		});
 		var domSymbol = symbol.asDOM();
 		console.log(k + " " + v.name + " " + parseInt(diff,10) + " " + pct);
-		var symbolWrapper = $("<div class='iconWrapper' playerNumber='"+ v.id +"' style='position: absolute; left: .5em; top: "+ pct+"%'></div>");
+		var symbolWrapper = $("<div class='iconWrapper' playerNumber='"+ v.id +"' style='position: absolute; left: 35%; top: "+ pct+"%'></div>");
 		symbolWrapper.append(domSymbol);
 		$("#slider").append( symbolWrapper );
 		$(symbolWrapper).qtip({

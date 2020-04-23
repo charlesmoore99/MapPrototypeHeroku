@@ -24,6 +24,37 @@ var Player = function(o) {
 	self.lng = o.lng;
 	self.speed = o.speed;
 	self.bearing = o.bearing;
+	self.text = o.text;
+	
+	self.getLatLon = function() {
+		return {
+			lat :self.lat, 
+			lng :  self.lng
+		};
+	};
+
+	self.hasPredictedLocation = function() {
+		return speed && bearing;
+	};
+	
+	self.estimatedLocation = function(){
+		// convert mgrs to lat/lon/alt
+		var lat = self.lat;
+		var lon = self.lng;
+		var ll0 = new LatLonSpherical(lat, lon);
+		
+		// convert date string to date
+		var start = moment().utc();
+		var end = start.clone().add(5, 'm');
+		var elapsedSeconds = Math.abs(end.diff(start,'seconds'));
+		
+		// convert speed to mps
+		var rate = self.speed * 0.277778;
+
+		var distance = elapsedSeconds * rate;
+		var ll1 = ll0.destinationPoint(distance, self.bearing );
+		return {lat :ll1._lat, lng :  ll1._lon}
+	};
 };
 
 
@@ -33,7 +64,7 @@ var PlayerList = function(){
 	self.players = {};
 	
 	self.addPlayer = function(player){
-		self.players[player.id] = player;
+		self.players[player.id] = new Player(player);
 	};
 	
 	self.getPlayer = function(id){
@@ -42,25 +73,20 @@ var PlayerList = function(){
 	
 	self.playerExists = function(id) {
 		return typeof self.players[id] !== "undefined"; 
-	}
+	};
 	
 	self.getPlayers = function(){
 		return self.players;
-	}
+	};
+	
+	self.clear = function(){
+		self.players = {};
+	};
 };
 
 
 var isSensor = function(player) {
 	
-};
-var calculateSidc = function(type, status) {
-	var sidc = ""
-	if (type === TYPE_SENSOR)
-		sidc = "SFGPES------";
-	if (type === TYPE_REPORT)
-		sidc = "SUGPU-------";
-	sidc = setStatus(sidc, status);
-	return sidc;
 };
 
 function setStatus(sidc, status) {
@@ -73,16 +99,6 @@ function setStatus(sidc, status) {
 	}
 }
 
-function setAffiliation(sidc, affiliation) {
-	switch (affiliation) {
-	case AFFILIATION_UNKNOWN:
-	case AFFILIATION_ENEMY:
-	case AFFILIATION_NEUTRAL:
-		return sidc.substr(0, 1) + affiliation + sidc.substr(2);
-	default:
-		return;
-	}
-}
 
 function buildSymbol(player, size){
 	var activitySymbol = new ms.Symbol(player.sidc);
@@ -97,8 +113,14 @@ function buildSymbol(player, size){
 	return activitySymbol;
 };
  
-function buildIcon(player) {
-	var activitySymbol = buildSymbol(player, 30);
+function buildIcon(player, size, options) {
+	if (typeof size === 'undefined') {
+		size = 30;
+	}
+	if (typeof options === 'undefined') {
+		options = {};
+	}
+	var activitySymbol = buildSymbol(player, size);
 	var activityIcon = L.divIcon({
 		className: '',
 		html: activitySymbol.asSVG(),
@@ -108,8 +130,18 @@ function buildIcon(player) {
 }
 
 
-function buildMarker(player, draggable) {
-	var activityIcon = buildIcon(player); 
+function buildMarker(player, size, draggable) {
+	var activityIcon = buildIcon(player, size); 
+    var activityMarker = L.marker(player, {
+    	draggable: draggable,
+		icon: activityIcon,
+		id: player.id
+    });
+	return activityMarker;
+}
+
+function buildSelectedMarker(player, size, draggable) {
+	var activityIcon = buildIcon(player, size, { infoBackground: "black", infoColor: "white" }); 
     var activityMarker = L.marker(player, {
     	draggable: draggable,
 		icon: activityIcon,
@@ -119,10 +151,10 @@ function buildMarker(player, draggable) {
 }
 
 function buildAnticipatedPlayer(player, dragable) {
-	var ll2 = calculateEstimatedLocation(player);
+	var ll2 = player.estimatedLocation();
 	var newDTG = moment(player.phenomenonTime).add(5, 'm');
 	return new Player({
-		id : "" + roll++,
+		id : player.id + "a",
 		parentId : player.id,
 		timestamp : parseInt(newDTG.format('x')),
 		phenomenonTime : parseInt(newDTG.format('x')), 
