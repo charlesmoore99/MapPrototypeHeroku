@@ -75,7 +75,7 @@ var map = function(o) {
 		$.each(selected.getPlayers(), function(name, value){
 		    var activityMarker = buildMarker(value, LARGE_ICON,  false)
 	        activityMarker.addTo(self.selectedGroup);
-		    if (value.hasPredictedLocation) {
+		    if (value.hasPredictedLocation()) {
 			    var ap = buildAnticipatedPlayer(value, false);
 			    var anticipatedActivityMarker = buildMarker(ap, LARGE_ICON,  false)
 		        anticipatedActivityMarker.addTo(self.anticipatedGroup);
